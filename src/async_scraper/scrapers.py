@@ -18,8 +18,14 @@ async def get_page_contents(url: str) -> str:
             return await resp.text()
 
 
-# TODO define parser interface
-class BookParser:
+class ParserInterface(ABC):
+    @classmethod
+    @abstractmethod
+    def parse(cls, contents: str) -> dict:
+        pass
+
+
+class BookParser(ParserInterface):
     @classmethod
     def parse(cls, contents: str) -> dict:
         book_soup = BeautifulSoup(contents, "html.parser")
@@ -36,7 +42,7 @@ class BookParser:
         return {"name": name, "price": price_str}
 
 
-class HomeParser:
+class HomeParser(ParserInterface):
     @classmethod
     def parse(cls, contents: str) -> dict:
         soup = BeautifulSoup(contents, "html.parser")
@@ -53,7 +59,7 @@ class HomeParser:
         }
 
 
-class CategoryParser:
+class CategoryParser(ParserInterface):
     @classmethod
     def parse(cls, contents: str) -> dict:
         soup = BeautifulSoup(contents, "html.parser")
