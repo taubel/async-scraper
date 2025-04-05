@@ -20,12 +20,6 @@ async def get_page_contents(url: str) -> str:
 
 # TODO define parser interface
 class BookParser:
-    pattern = r"catalogue\/[A-Za-z\-\_0-9]+\/index.html"
-
-    @classmethod
-    def match(cls, link: str) -> bool:
-        return bool(re.match(cls.pattern, link))
-
     @classmethod
     def parse(cls, contents: str) -> dict:
         book_soup = BeautifulSoup(contents, "html.parser")
@@ -40,6 +34,23 @@ class BookParser:
         # TODO define model
         # TODO return tag contents, not the tag itself
         return {"name": name, "price": price_str}
+
+
+class HomeParser:
+    @classmethod
+    def parse(cls, contents: str) -> dict:
+        soup = BeautifulSoup(contents, "html.parser")
+
+        links = []
+        for link in soup.find_all("a"):
+            href = link.get("href")
+            if not href:
+                continue
+            links.append(href)
+
+        return {
+            "links": links,
+        }
 
 
 class Page:
@@ -114,7 +125,16 @@ class BooksToScrapeScraper(ScraperInterface):
 
     async def scrape_home(self, url: str) -> dict:
         contents = await get_page_contents(url)
-        data = await self.parse(contents)
+        parsed = HomeParser.parse(contents)
+        data = []
+        for link in parsed["links"]:
+            if BookPage.match(link):
+                # TODO run concurrently
+                contents = await get_page_contents(self.url + link)
+                book_data = BookParser.parse(contents)
+                data.append(book_data)
+            else:
+                continue
         return data
 
     async def scrape_category(self, url: str) -> dict:
@@ -127,22 +147,6 @@ class BooksToScrapeScraper(ScraperInterface):
     async def scrape_book(self, url: str) -> dict:
         contents = await get_page_contents(url)
         data = BookParser.parse(contents)
-        return data
-
-    async def parse(self, contents: str) -> list[dict]:
-        soup = BeautifulSoup(contents, "html.parser")
-        data = []
-        for link in soup.find_all("a"):
-            href = link.get("href")
-            if not href:
-                continue
-            if BookParser.match(href):
-                # TODO run concurrently
-                contents = await get_page_contents(self.url + href)
-                book_data = BookParser.parse(contents)
-                data.append(book_data)
-            else:
-                continue
         return data
 
 
