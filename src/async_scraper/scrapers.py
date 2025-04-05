@@ -71,9 +71,10 @@ class HomePage(Page):
     # https://books.toscrape.com/index.html
 
     paths: list[str] = [
-        r"",
-        r"/",
-        r"/index.html",
+        r"^$",
+        r"^/$",
+        r"^index.html$",
+        r"^/index.html$",
     ]
 
 
@@ -81,7 +82,7 @@ class CategoryPage(Page):
     # https://books.toscrape.com/catalogue/category/books/travel_2/index.html
 
     paths: list[str] = [
-        r"catalogue/category/books/.*",
+        r"^catalogue/category/books/.*",
     ]
 
 
@@ -90,7 +91,7 @@ class BookPage(Page):
 
     paths: list[str] = [
         # TODO this pattern can match a category, need to update it
-        r"catalogue/.*",
+        r"^catalogue/.*",
     ]
 
 
