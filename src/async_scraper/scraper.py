@@ -1,8 +1,13 @@
 import enum
+import logging
 import re
 
 import aiohttp
 from bs4 import BeautifulSoup
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 async def get_page_contents(url: str) -> str:
