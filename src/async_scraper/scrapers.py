@@ -128,16 +128,25 @@ class BooksToScrapeScraper(ScraperInterface):
         parsed = HomeParser.parse(contents)
         data = []
         for link in parsed["links"]:
-            if BookPage.match(link):
-                # TODO run concurrently
-                contents = await get_page_contents(self.url + link)
-                book_data = BookParser.parse(contents)
-                data.append(book_data)
+            logger.debug(f"Found link: {link}")
+            # Avoid looping the same page
+            if HomePage.match(link):
+                logger.debug(f"Link matched home page: {link}")
+                continue
+
+            # TODO move this for loop to function to make it reusable
+            for page, value in self.pages.items():
+                if page.match(link):
+                    # TODO run concurrently
+                    _data = await value["scraper"](self.url + link)
+                    # TODO decide how output is collected
+                    data.append(_data)
             else:
                 continue
         return data
 
     async def scrape_category(self, url: str) -> dict:
+        logger.debug(f"Scraping category: {url}")
         contents = await get_page_contents(url)
         # TODO define CategoryParser
         data = CategoryParser.parse(contents)
@@ -145,6 +154,7 @@ class BooksToScrapeScraper(ScraperInterface):
         return {}
 
     async def scrape_book(self, url: str) -> dict:
+        logger.debug(f"Scraping book: {url}")
         contents = await get_page_contents(url)
         data = BookParser.parse(contents)
         return data
