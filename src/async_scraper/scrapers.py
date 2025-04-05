@@ -53,6 +53,23 @@ class HomeParser:
         }
 
 
+class CategoryParser:
+    @classmethod
+    def parse(cls, contents: str) -> dict:
+        soup = BeautifulSoup(contents, "html.parser")
+
+        links = []
+        for link in soup.find_all("a"):
+            href = link.get("href")
+            if not href:
+                continue
+            links.append(href)
+
+        return {
+            "links": links,
+        }
+
+
 class Page:
     # TODO make paths an abstract attribute
     paths: list[str] = []
@@ -147,10 +164,28 @@ class BooksToScrapeScraper(ScraperInterface):
     async def scrape_category(self, url: str) -> dict:
         logger.debug(f"Scraping category: {url}")
         contents = await get_page_contents(url)
-        # TODO define CategoryParser
-        data = CategoryParser.parse(contents)
-        # TODO scrape all links to books
-        return {}
+        parsed = CategoryParser.parse(contents)
+        data = []
+        for link in parsed["links"]:
+            # FIXME this pattern of defining what pages to skip in all scrapers is error prone
+            logger.debug(f"Found link: {link}")
+            # Avoid looping the same page
+            if HomePage.match(link):
+                logger.debug(f"Link matched home page: {link}")
+                continue
+            # Avoid scraping other categories
+            elif CategoryPage.match(link):
+                logger.debug(f"Link matched other category page: {link}")
+                continue
+
+            # TODO move this for loop to function to make it reusable
+            for page, value in self.pages.items():
+                if page.match(link):
+                    # TODO run concurrently
+                    _data = await value["scraper"](self.url + link)
+                    # TODO decide how output is collected
+                    data.append(_data)
+        return data
 
     async def scrape_book(self, url: str) -> dict:
         logger.debug(f"Scraping book: {url}")
