@@ -112,16 +112,22 @@ class BooksToScrapeScraper(ScraperInterface):
             raise ValueError(f"Url: {self.url} does not match any defined page")
         print(data)
 
-    async def scrape_home(self, url: str) -> list[dict]:
+    async def scrape_home(self, url: str) -> dict:
         contents = await get_page_contents(url)
         data = await self.parse(contents)
         return data
 
-    async def scrape_category(self, url: str) -> list[dict]:
-        return []
+    async def scrape_category(self, url: str) -> dict:
+        contents = await get_page_contents(url)
+        # TODO define CategoryParser
+        data = CategoryParser.parse(contents)
+        # TODO scrape all links to books
+        return {}
 
-    async def scrape_book(self, url: str) -> list[dict]:
-        return []
+    async def scrape_book(self, url: str) -> dict:
+        contents = await get_page_contents(url)
+        data = BookParser.parse(contents)
+        return data
 
     async def parse(self, contents: str) -> list[dict]:
         soup = BeautifulSoup(contents, "html.parser")
