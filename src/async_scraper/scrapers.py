@@ -41,7 +41,10 @@ class BookParser:
         return {"name": name, "price": price_str}
 
 
-class Scraper:
+# TODO define scraper interface
+class BooksToScrapeScraper:
+    # https://books.toscrape.com/index.html
+
     def __init__(self, url: str):
         self.url = url
 
@@ -65,3 +68,8 @@ class Scraper:
             else:
                 continue
         return data
+
+
+class OxylabsSandboxScraper:
+    # https://sandbox.oxylabs.io/products
+    pass
