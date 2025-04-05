@@ -1,7 +1,9 @@
 import asyncio
 from abc import ABC, abstractmethod
+import functools
 import logging
 import re
+from typing import Callable
 from urllib.parse import urlparse, urljoin
 
 import aiohttp
@@ -17,6 +19,10 @@ async def get_page_contents(url: str) -> str:
         async with session.get(url) as resp:
             # TODO check status
             return await resp.text()
+
+
+def add_to_dict(in_dict, key, value):
+    in_dict[key] = value
 
 
 class ParserInterface(ABC):
@@ -146,20 +152,25 @@ class BooksToScrapeScraper(ScraperInterface):
         }
 
     async def scrape(self):
+        parsed = {}
+        callback = functools.partial(add_to_dict, parsed)
+
         # TODO does url need to be stored in instance?
         parsed_url = urlparse(self.url)
         for page, value in self.pages.items():
             if page.match(parsed_url.path):
-                data = await value["scraper"](self.url)
+                await value["scraper"](self.url, callback)
                 break
         else:
             raise ValueError(f"Url: {self.url} does not match any defined page")
-        print(data)
+        print(parsed)
 
-    async def scrape_home(self, url: str) -> dict:
+    # TODO typehint callback
+    async def scrape_home(self, url: str, parse_callback: Callable):
         contents = await get_page_contents(url)
         parsed = HomeParser.parse(contents, url)
-        data = []
+        callback = functools.partial(add_to_dict, parsed)
+
         tasks = []
         for link in parsed["links"]:
             logger.debug(f"Found link: {link}")
@@ -172,18 +183,18 @@ class BooksToScrapeScraper(ScraperInterface):
             for page, value in self.pages.items():
                 if page.match(link):
                     scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(self.url + link))
+                    task = asyncio.create_task(scraper(self.url + link, callback))
                     tasks.append(task)
-                    # TODO decide how output is collected
-                    # data.append(_data)
         await asyncio.gather(*tasks)
-        return data
+        parse_callback(url, parsed)
 
-    async def scrape_category(self, url: str) -> dict:
+    # TODO typehint callback
+    async def scrape_category(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping category: {url}")
         contents = await get_page_contents(url)
         parsed = CategoryParser.parse(contents, url)
-        data = []
+        callback = functools.partial(add_to_dict, parsed)
+
         tasks = []
         for link in parsed["links"]:
             # FIXME this pattern of defining what pages to skip in all scrapers is error prone
@@ -201,18 +212,17 @@ class BooksToScrapeScraper(ScraperInterface):
             for page, value in self.pages.items():
                 if page.match(link):
                     scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(self.url + link))
+                    task = asyncio.create_task(scraper(self.url + link, callback))
                     tasks.append(task)
-                    # TODO decide how output is collected
-                    # data.append(_data)
         await asyncio.gather(*tasks)
-        return data
+        parse_callback(url, parsed)
 
-    async def scrape_book(self, url: str) -> dict:
+    # TODO typehint callback
+    async def scrape_book(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping book: {url}")
         contents = await get_page_contents(url)
-        data = BookParser.parse(contents, url)
-        return data
+        parsed = BookParser.parse(contents, url)
+        parse_callback(url, parsed)
 
 
 class OxylabsSandboxScraper(ScraperInterface):
