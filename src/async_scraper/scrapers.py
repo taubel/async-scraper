@@ -56,6 +56,8 @@ class HomeParser(ParserInterface):
             url_parsed = urlparse(url_joined)
             links.append(url_parsed.path)
 
+        # Leave only unique links
+        links = list(set(links))
         return {
             "links": links,
         }
@@ -75,6 +77,8 @@ class CategoryParser(ParserInterface):
             url_parsed = urlparse(url_joined)
             links.append(url_parsed.path)
 
+        # Leave only unique links
+        links = list(set(links))
         return {
             "links": links,
         }
