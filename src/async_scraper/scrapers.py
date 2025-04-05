@@ -160,6 +160,7 @@ class BooksToScrapeScraper(ScraperInterface):
         contents = await get_page_contents(url)
         parsed = HomeParser.parse(contents, url)
         data = []
+        tasks = []
         for link in parsed["links"]:
             logger.debug(f"Found link: {link}")
             # Avoid looping the same page
@@ -167,14 +168,15 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched home page: {link}")
                 continue
 
-            async with asyncio.TaskGroup() as tg:
-                # TODO move this for loop to function to make it reusable
-                for page, value in self.pages.items():
-                    if page.match(link):
-                        scraper = value["scraper"]
-                        tg.create_task(scraper(self.url + link))
-                        # TODO decide how output is collected
-                        # data.append(_data)
+            # TODO move this for loop to function to make it reusable
+            for page, value in self.pages.items():
+                if page.match(link):
+                    scraper = value["scraper"]
+                    task = asyncio.create_task(scraper(self.url + link))
+                    tasks.append(task)
+                    # TODO decide how output is collected
+                    # data.append(_data)
+        await asyncio.gather(*tasks)
         return data
 
     async def scrape_category(self, url: str) -> dict:
@@ -182,6 +184,7 @@ class BooksToScrapeScraper(ScraperInterface):
         contents = await get_page_contents(url)
         parsed = CategoryParser.parse(contents, url)
         data = []
+        tasks = []
         for link in parsed["links"]:
             # FIXME this pattern of defining what pages to skip in all scrapers is error prone
             logger.debug(f"Found link: {link}")
@@ -194,14 +197,15 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched other category page: {link}")
                 continue
 
-            async with asyncio.TaskGroup() as tg:
-                # TODO move this for loop to function to make it reusable
-                for page, value in self.pages.items():
-                    if page.match(link):
-                        scraper = value["scraper"]
-                        tg.create_task(scraper(self.url + link))
-                        # TODO decide how output is collected
-                        # data.append(_data)
+            # TODO move this for loop to function to make it reusable
+            for page, value in self.pages.items():
+                if page.match(link):
+                    scraper = value["scraper"]
+                    task = asyncio.create_task(scraper(self.url + link))
+                    tasks.append(task)
+                    # TODO decide how output is collected
+                    # data.append(_data)
+        await asyncio.gather(*tasks)
         return data
 
     async def scrape_book(self, url: str) -> dict:
