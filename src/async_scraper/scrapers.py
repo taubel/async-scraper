@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import logging
 import re
+from urllib.parse import urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -41,6 +42,25 @@ class BookParser:
         return {"name": name, "price": price_str}
 
 
+class HomePage:
+    # https://books.toscrape.com
+    # https://books.toscrape.com/
+    # https://books.toscrape.com/index.html
+
+    paths: list[str] = [
+        r"",
+        r"/",
+        r"/index.html",
+    ]
+
+    @classmethod
+    def match(cls, path: str) -> bool:
+        for path_pattern in cls.paths:
+            if re.match(path_pattern, path):
+                return True
+        return False
+
+
 class ScraperInterface(ABC):
     @abstractmethod
     def scrape(self):
@@ -52,11 +72,29 @@ class BooksToScrapeScraper(ScraperInterface):
 
     def __init__(self, url: str):
         self.url = url
+        # TODO add other pages
+        # https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+        # https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html
+        self.pages = {
+            # TODO typehint scraping callback
+            HomePage: {"scraper": self.scrape_home},
+        }
 
     async def scrape(self):
-        contents = await get_page_contents(self.url)
-        data = await self.parse(contents)
+        # TODO does url need to be stored in instance?
+        parsed_url = urlparse(self.url)
+        for page, value in self.pages.items():
+            if page.match(parsed_url.path):
+                data = await value["scraper"](self.url)
+                break
+        else:
+            raise ValueError(f"Url: {self.url} does not match any defined page")
         print(data)
+
+    async def scrape_home(self, url: str) -> list[dict]:
+        contents = await get_page_contents(url)
+        data = await self.parse(contents)
+        return data
 
     async def parse(self, contents: str) -> list[dict]:
         soup = BeautifulSoup(contents, "html.parser")
