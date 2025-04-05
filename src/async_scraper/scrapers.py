@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import logging
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -21,13 +21,13 @@ async def get_page_contents(url: str) -> str:
 class ParserInterface(ABC):
     @classmethod
     @abstractmethod
-    def parse(cls, contents: str) -> dict:
+    def parse(cls, contents: str, url: str) -> dict:
         pass
 
 
 class BookParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str) -> dict:
+    def parse(cls, contents: str, url: str) -> dict:
         book_soup = BeautifulSoup(contents, "html.parser")
         product_main = book_soup.find("div", class_="col-sm-6 product_main")
         if not product_main:
@@ -44,7 +44,7 @@ class BookParser(ParserInterface):
 
 class HomeParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str) -> dict:
+    def parse(cls, contents: str, url: str) -> dict:
         soup = BeautifulSoup(contents, "html.parser")
 
         links = []
@@ -52,7 +52,9 @@ class HomeParser(ParserInterface):
             href = link.get("href")
             if not href:
                 continue
-            links.append(href)
+            url_joined = urljoin(url, href)
+            url_parsed = urlparse(url_joined)
+            links.append(url_parsed.path)
 
         return {
             "links": links,
@@ -61,7 +63,7 @@ class HomeParser(ParserInterface):
 
 class CategoryParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str) -> dict:
+    def parse(cls, contents: str, url: str) -> dict:
         soup = BeautifulSoup(contents, "html.parser")
 
         links = []
@@ -69,7 +71,9 @@ class CategoryParser(ParserInterface):
             href = link.get("href")
             if not href:
                 continue
-            links.append(href)
+            url_joined = urljoin(url, href)
+            url_parsed = urlparse(url_joined)
+            links.append(url_parsed.path)
 
         return {
             "links": links,
@@ -105,7 +109,7 @@ class CategoryPage(Page):
     # https://books.toscrape.com/catalogue/category/books/travel_2/index.html
 
     paths: list[str] = [
-        r"^catalogue/category/books/.*",
+        r"^/?catalogue/category/books/.*",
     ]
 
 
@@ -114,7 +118,7 @@ class BookPage(Page):
 
     paths: list[str] = [
         # TODO this pattern can match a category, need to update it
-        r"^catalogue/.*",
+        r"^/?catalogue/.*",
     ]
 
 
@@ -149,7 +153,7 @@ class BooksToScrapeScraper(ScraperInterface):
 
     async def scrape_home(self, url: str) -> dict:
         contents = await get_page_contents(url)
-        parsed = HomeParser.parse(contents)
+        parsed = HomeParser.parse(contents, url)
         data = []
         for link in parsed["links"]:
             logger.debug(f"Found link: {link}")
@@ -170,7 +174,7 @@ class BooksToScrapeScraper(ScraperInterface):
     async def scrape_category(self, url: str) -> dict:
         logger.debug(f"Scraping category: {url}")
         contents = await get_page_contents(url)
-        parsed = CategoryParser.parse(contents)
+        parsed = CategoryParser.parse(contents, url)
         data = []
         for link in parsed["links"]:
             # FIXME this pattern of defining what pages to skip in all scrapers is error prone
@@ -196,7 +200,7 @@ class BooksToScrapeScraper(ScraperInterface):
     async def scrape_book(self, url: str) -> dict:
         logger.debug(f"Scraping book: {url}")
         contents = await get_page_contents(url)
-        data = BookParser.parse(contents)
+        data = BookParser.parse(contents, url)
         return data
 
 
