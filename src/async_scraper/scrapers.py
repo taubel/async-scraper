@@ -42,7 +42,19 @@ class BookParser:
         return {"name": name, "price": price_str}
 
 
-class HomePage:
+class Page:
+    # TODO make paths an abstract attribute
+    paths: list[str] = []
+
+    @classmethod
+    def match(cls, path: str) -> bool:
+        for path_pattern in cls.paths:
+            if re.match(path_pattern, path):
+                return True
+        return False
+
+
+class HomePage(Page):
     # https://books.toscrape.com
     # https://books.toscrape.com/
     # https://books.toscrape.com/index.html
@@ -53,12 +65,22 @@ class HomePage:
         r"/index.html",
     ]
 
-    @classmethod
-    def match(cls, path: str) -> bool:
-        for path_pattern in cls.paths:
-            if re.match(path_pattern, path):
-                return True
-        return False
+
+class CategoryPage(Page):
+    # https://books.toscrape.com/catalogue/category/books/travel_2/index.html
+
+    paths: list[str] = [
+        r"catalogue/category/books/.*",
+    ]
+
+
+class BookPage(Page):
+    # https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html
+
+    paths: list[str] = [
+        # TODO this pattern can match a category, need to update it
+        r"catalogue/.*",
+    ]
 
 
 class ScraperInterface(ABC):
@@ -72,12 +94,11 @@ class BooksToScrapeScraper(ScraperInterface):
 
     def __init__(self, url: str):
         self.url = url
-        # TODO add other pages
-        # https://books.toscrape.com/catalogue/category/books/travel_2/index.html
-        # https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html
         self.pages = {
             # TODO typehint scraping callback
             HomePage: {"scraper": self.scrape_home},
+            CategoryPage: {"scraper": self.scrape_category},
+            BookPage: {"scraper": self.scrape_book},
         }
 
     async def scrape(self):
@@ -95,6 +116,12 @@ class BooksToScrapeScraper(ScraperInterface):
         contents = await get_page_contents(url)
         data = await self.parse(contents)
         return data
+
+    async def scrape_category(self, url: str) -> list[dict]:
+        return []
+
+    async def scrape_book(self, url: str) -> list[dict]:
+        return []
 
     async def parse(self, contents: str) -> list[dict]:
         soup = BeautifulSoup(contents, "html.parser")
