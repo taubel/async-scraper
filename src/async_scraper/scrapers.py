@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 import logging
 import re
@@ -166,13 +167,14 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched home page: {link}")
                 continue
 
-            # TODO move this for loop to function to make it reusable
-            for page, value in self.pages.items():
-                if page.match(link):
-                    # TODO run concurrently
-                    _data = await value["scraper"](self.url + link)
-                    # TODO decide how output is collected
-                    data.append(_data)
+            async with asyncio.TaskGroup() as tg:
+                # TODO move this for loop to function to make it reusable
+                for page, value in self.pages.items():
+                    if page.match(link):
+                        scraper = value["scraper"]
+                        tg.create_task(scraper(self.url + link))
+                        # TODO decide how output is collected
+                        # data.append(_data)
         return data
 
     async def scrape_category(self, url: str) -> dict:
@@ -192,13 +194,14 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched other category page: {link}")
                 continue
 
-            # TODO move this for loop to function to make it reusable
-            for page, value in self.pages.items():
-                if page.match(link):
-                    # TODO run concurrently
-                    _data = await value["scraper"](self.url + link)
-                    # TODO decide how output is collected
-                    data.append(_data)
+            async with asyncio.TaskGroup() as tg:
+                # TODO move this for loop to function to make it reusable
+                for page, value in self.pages.items():
+                    if page.match(link):
+                        scraper = value["scraper"]
+                        tg.create_task(scraper(self.url + link))
+                        # TODO decide how output is collected
+                        # data.append(_data)
         return data
 
     async def scrape_book(self, url: str) -> dict:
