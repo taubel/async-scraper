@@ -17,38 +17,51 @@ async def get_page_contents(url: str) -> str:
             return await resp.text()
 
 
-class Scrapeables(enum.Enum):
-    category = r"catalogue\/category\/books\/[A-Za-z\-\_0-9]+\/index.html"
-    book = r"catalogue\/[A-Za-z\-\_0-9]+\/index.html"
+# TODO define parser interface
+class BookParser:
+    pattern = r"catalogue\/[A-Za-z\-\_0-9]+\/index.html"
+
+    @classmethod
+    def match(cls, link: str) -> bool:
+        return bool(re.match(cls.pattern, link))
+
+    @classmethod
+    def parse(cls, contents: str) -> dict:
+        book_soup = BeautifulSoup(contents, "html.parser")
+        product_main = book_soup.find("div", class_="col-sm-6 product_main")
+        if product_main:
+            name = product_main.h1
+            price_str = product_main.find("p", class_="price_color")
+            assert price_str, f"{name} does not contain a price (can't be)"
+            # TODO define model
+            # TODO return tag contents, not the tag itself
+            return {"name": name, "price": price_str}
+        else:
+            logger.debug("No book data found")
+            return {}
 
 
 class Scraper:
     def __init__(self, url: str):
         self.url = url
 
-    async def scrape(self, what_to_scrape: Scrapeables):
+    async def scrape(self):
         contents = await get_page_contents(self.url)
-        data = await self.parse(contents, what_to_scrape)
+        data = await self.parse(contents)
         print(data)
 
-    async def parse(self, contents: str, what_to_scrape: Scrapeables) -> list[dict]:
+    async def parse(self, contents: str) -> list[dict]:
         soup = BeautifulSoup(contents, "html.parser")
-        # TODO should depend on scraper
-        books = []
+        data = []
         for link in soup.find_all("a"):
             href = link.get("href")
             if not href:
                 continue
-            if re.match(what_to_scrape.value, href):
+            if BookParser.match(href):
                 # TODO run concurrently
                 contents = await get_page_contents(self.url + href)
-                book_soup = BeautifulSoup(contents, "html.parser")
-                product_main = book_soup.find("div", class_="col-sm-6 product_main")
-                if product_main:
-                    name = product_main.h1
-                    price_str = product_main.find("p", class_="price_color")
-                    assert price_str, f"{name} does not contain a price (can't be)"
-                    books.append(
-                        {"name": name, "price": price_str}
-                    )
-        return books
+                book_data = BookParser.parse(contents)
+                data.append(book_data)
+            else:
+                continue
+        return data

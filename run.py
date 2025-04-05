@@ -1,13 +1,13 @@
 import asyncio
 
-from async_scraper.scraper import Scraper, Scrapeables
+from async_scraper.scraper import Scraper
 
 
 def run_scraper():
     url = "https://books.toscrape.com/"
 
     scraper = Scraper(url)
-    asyncio.run(scraper.scrape(Scrapeables.book))
+    asyncio.run(scraper.scrape())
 
 
 if __name__ == "__main__":
