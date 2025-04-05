@@ -142,8 +142,6 @@ class BooksToScrapeScraper(ScraperInterface):
                     _data = await value["scraper"](self.url + link)
                     # TODO decide how output is collected
                     data.append(_data)
-            else:
-                continue
         return data
 
     async def scrape_category(self, url: str) -> dict:
