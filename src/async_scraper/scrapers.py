@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import enum
 import logging
 import re
 
