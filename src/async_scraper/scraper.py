@@ -29,16 +29,16 @@ class BookParser:
     def parse(cls, contents: str) -> dict:
         book_soup = BeautifulSoup(contents, "html.parser")
         product_main = book_soup.find("div", class_="col-sm-6 product_main")
-        if product_main:
-            name = product_main.h1
-            price_str = product_main.find("p", class_="price_color")
-            assert price_str, f"{name} does not contain a price (can't be)"
-            # TODO define model
-            # TODO return tag contents, not the tag itself
-            return {"name": name, "price": price_str}
-        else:
+        if not product_main:
             logger.debug("No book data found")
             return {}
+
+        name = product_main.h1
+        price_str = product_main.find("p", class_="price_color")
+        assert price_str, f"{name} does not contain a price (can't be)"
+        # TODO define model
+        # TODO return tag contents, not the tag itself
+        return {"name": name, "price": price_str}
 
 
 class Scraper:
