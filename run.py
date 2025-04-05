@@ -1,12 +1,12 @@
 import asyncio
 
-from async_scraper.scrapers import BooksToScrapeScraper
+from async_scraper.scrapers import create_parser
 
 
 def run_scraper():
     url = "https://books.toscrape.com/"
 
-    scraper = BooksToScrapeScraper(url)
+    scraper = create_parser(url)
     asyncio.run(scraper.scrape())
 
 

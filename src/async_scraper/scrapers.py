@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import enum
 import logging
 import re
@@ -41,8 +42,13 @@ class BookParser:
         return {"name": name, "price": price_str}
 
 
-# TODO define scraper interface
-class BooksToScrapeScraper:
+class ScraperInterface(ABC):
+    @abstractmethod
+    def scrape(self):
+        pass
+
+
+class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
     def __init__(self, url: str):
@@ -70,6 +76,15 @@ class BooksToScrapeScraper:
         return data
 
 
-class OxylabsSandboxScraper:
+class OxylabsSandboxScraper(ScraperInterface):
     # https://sandbox.oxylabs.io/products
     pass
+
+
+def create_parser(url: str) -> ScraperInterface:
+    if re.match(r"^https?://books.toscrape.com.*$", url):
+        return BooksToScrapeScraper(url)
+    elif re.match(r"^https?://sandbox.oxylabs.io/products.*$", url):
+        return OxylabsSandboxScraper(url)
+    else:
+        raise ValueError(f"No scraper defined for url: {url}")
