@@ -60,8 +60,7 @@ class HomeParser(ParserInterface):
             if not href:
                 continue
             url_joined = urljoin(url, href)
-            url_parsed = urlparse(url_joined)
-            links.append(url_parsed.path)
+            links.append(url_joined)
 
         # Leave only unique links
         links = list(set(links))
@@ -81,8 +80,7 @@ class CategoryParser(ParserInterface):
             if not href:
                 continue
             url_joined = urljoin(url, href)
-            url_parsed = urlparse(url_joined)
-            links.append(url_parsed.path)
+            links.append(url_joined)
 
         # Leave only unique links
         links = list(set(links))
@@ -96,7 +94,8 @@ class Page:
     paths: list[str] = []
 
     @classmethod
-    def match(cls, path: str) -> bool:
+    def match(cls, url: str) -> bool:
+        path = urlparse(url).path
         for path_pattern in cls.paths:
             if re.match(path_pattern, path):
                 return True
@@ -183,7 +182,7 @@ class BooksToScrapeScraper(ScraperInterface):
             for page, value in self.pages.items():
                 if page.match(link):
                     scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(self.url + link, callback))
+                    task = asyncio.create_task(scraper(link, callback))
                     tasks.append(task)
         await asyncio.gather(*tasks)
         parse_callback(url, parsed)
@@ -212,7 +211,7 @@ class BooksToScrapeScraper(ScraperInterface):
             for page, value in self.pages.items():
                 if page.match(link):
                     scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(self.url + link, callback))
+                    task = asyncio.create_task(scraper(link, callback))
                     tasks.append(task)
         await asyncio.gather(*tasks)
         parse_callback(url, parsed)
