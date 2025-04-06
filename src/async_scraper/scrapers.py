@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def get_page_contents(url: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-            # TODO check status
+            resp.raise_for_status()
             return await resp.text()
 
 
@@ -173,7 +173,12 @@ class BooksToScrapeScraper(ScraperInterface):
 
     # TODO typehint callback
     async def scrape_home(self, url: str, parse_callback: Callable):
-        contents = await get_page_contents(url)
+        try:
+            contents = await get_page_contents(url)
+        except aiohttp.ClientResponseError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
+            return
         parsed = HomeParser.parse(contents, url)
         callback = functools.partial(add_to_dict, parsed)
 
@@ -198,7 +203,12 @@ class BooksToScrapeScraper(ScraperInterface):
     # TODO typehint callback
     async def scrape_category(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping category: {url}")
-        contents = await get_page_contents(url)
+        try:
+            contents = await get_page_contents(url)
+        except aiohttp.ClientResponseError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
+            return
         parsed = CategoryParser.parse(contents, url)
         callback = functools.partial(add_to_dict, parsed)
 
@@ -228,7 +238,12 @@ class BooksToScrapeScraper(ScraperInterface):
     # TODO typehint callback
     async def scrape_book(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping book: {url}")
-        contents = await get_page_contents(url)
+        try:
+            contents = await get_page_contents(url)
+        except aiohttp.ClientResponseError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
+            return
         parsed = BookParser.parse(contents, url)
         parse_callback(url, parsed)
 
