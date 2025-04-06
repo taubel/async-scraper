@@ -112,6 +112,7 @@ class HomePage(Page):
         r"^/$",
         r"^index.html$",
         r"^/index.html$",
+        r"^/?catalogue/category/books_1/index.html$",
     ]
 
 
@@ -148,6 +149,15 @@ class BooksToScrapeScraper(ScraperInterface):
             BookPage: {"scraper": self.scrape_book},
         }
 
+    def _create_scraping_task(self, link: str, callback: Callable) -> asyncio.Task:
+        for page, value in self.pages.items():
+            if page.match(link):
+                scraper = value["scraper"]
+                task = asyncio.create_task(scraper(link, callback))
+                return task
+        else:
+            raise ValueError(f"No scraper found for link {link}")
+
     async def scrape(self, url: str):
         parsed = {}
         callback = functools.partial(add_to_dict, parsed)
@@ -175,12 +185,13 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched home page: {link}")
                 continue
 
-            # TODO move this for loop to function to make it reusable
-            for page, value in self.pages.items():
-                if page.match(link):
-                    scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(link, callback))
-                    tasks.append(task)
+            try:
+                task = self._create_scraping_task(link, callback)
+            except ValueError as e:
+                logger.error(e)
+                continue
+            tasks.append(task)
+
         await asyncio.gather(*tasks)
         parse_callback(url, parsed)
 
@@ -204,12 +215,13 @@ class BooksToScrapeScraper(ScraperInterface):
                 logger.debug(f"Link matched other category page: {link}")
                 continue
 
-            # TODO move this for loop to function to make it reusable
-            for page, value in self.pages.items():
-                if page.match(link):
-                    scraper = value["scraper"]
-                    task = asyncio.create_task(scraper(link, callback))
-                    tasks.append(task)
+            try:
+                task = self._create_scraping_task(link, callback)
+            except ValueError as e:
+                logger.error(e)
+                continue
+            tasks.append(task)
+
         await asyncio.gather(*tasks)
         parse_callback(url, parsed)
 
