@@ -7,7 +7,7 @@ def run_scraper():
     url = "https://books.toscrape.com/"
 
     scraper = create_parser(url)
-    asyncio.run(scraper.scrape())
+    asyncio.run(scraper.scrape(url))
 
 
 if __name__ == "__main__":

@@ -133,15 +133,14 @@ class BookPage(Page):
 
 class ScraperInterface(ABC):
     @abstractmethod
-    def scrape(self):
+    def scrape(self, url: str):
         pass
 
 
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
-    def __init__(self, url: str):
-        self.url = url
+    def __init__(self):
         self.pages = {
             # TODO typehint scraping callback
             HomePage: {"scraper": self.scrape_home},
@@ -149,18 +148,17 @@ class BooksToScrapeScraper(ScraperInterface):
             BookPage: {"scraper": self.scrape_book},
         }
 
-    async def scrape(self):
+    async def scrape(self, url: str):
         parsed = {}
         callback = functools.partial(add_to_dict, parsed)
 
-        # TODO does url need to be stored in instance?
-        parsed_url = urlparse(self.url)
+        parsed_url = urlparse(url)
         for page, value in self.pages.items():
             if page.match(parsed_url.path):
-                await value["scraper"](self.url, callback)
+                await value["scraper"](url, callback)
                 break
         else:
-            raise ValueError(f"Url: {self.url} does not match any defined page")
+            raise ValueError(f"Url: {url} does not match any defined page")
         print(parsed)
 
     # TODO typehint callback
@@ -230,8 +228,8 @@ class OxylabsSandboxScraper(ScraperInterface):
 
 def create_parser(url: str) -> ScraperInterface:
     if re.match(r"^https?://books.toscrape.com.*$", url):
-        return BooksToScrapeScraper(url)
+        return BooksToScrapeScraper()
     elif re.match(r"^https?://sandbox.oxylabs.io/products.*$", url):
-        return OxylabsSandboxScraper(url)
+        return OxylabsSandboxScraper()
     else:
         raise ValueError(f"No scraper defined for url: {url}")
