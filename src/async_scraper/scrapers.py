@@ -8,6 +8,7 @@ from urllib.parse import urlparse, urljoin
 
 import aiohttp
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -32,9 +33,14 @@ class ParserInterface(ABC):
         pass
 
 
+class BookModel(BaseModel):
+    name: str
+    price: str
+
+
 class BookParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str, url: str) -> dict:
+    def parse(cls, contents: str, url: str) -> BookModel:
         book_soup = BeautifulSoup(contents, "html.parser")
         product_main = book_soup.find("div", class_="col-sm-6 product_main")
         if not product_main:
@@ -43,9 +49,8 @@ class BookParser(ParserInterface):
         name = product_main.h1.contents[0]
         price_tag = product_main.find("p", class_="price_color")
         assert price_tag, f"{name} does not contain a price (can't be)"
-        price_str = price_tag.contents[0]
-        # TODO define model
-        return {"name": name, "price": price_str}
+        price_str = str(price_tag.contents[0])
+        return BookModel(name=name, price=price_str)
 
 
 class HomeParser(ParserInterface):
