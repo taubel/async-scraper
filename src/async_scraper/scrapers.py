@@ -41,11 +41,11 @@ class BookParser(ParserInterface):
             logger.debug("No book data found")
             return {}
 
-        name = product_main.h1
-        price_str = product_main.find("p", class_="price_color")
-        assert price_str, f"{name} does not contain a price (can't be)"
+        name = product_main.h1.contents[0]
+        price_tag = product_main.find("p", class_="price_color")
+        assert price_tag, f"{name} does not contain a price (can't be)"
+        price_str = price_tag.contents[0]
         # TODO define model
-        # TODO return tag contents, not the tag itself
         return {"name": name, "price": price_str}
 
 
