@@ -10,6 +10,8 @@ import aiohttp
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
+from ..interfaces import ScraperInterface
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -136,12 +138,6 @@ class BookPage(Page):
     ]
 
 
-class ScraperInterface(ABC):
-    @abstractmethod
-    def scrape(self, url: str):
-        pass
-
-
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
@@ -254,17 +250,3 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.warning(e)
             return
         parse_callback(url, parsed)
-
-
-class OxylabsSandboxScraper(ScraperInterface):
-    # https://sandbox.oxylabs.io/products
-    pass
-
-
-def create_scraper(url: str) -> ScraperInterface:
-    if re.match(r"^https?://books.toscrape.com.*$", url):
-        return BooksToScrapeScraper()
-    elif re.match(r"^https?://sandbox.oxylabs.io/products.*$", url):
-        return OxylabsSandboxScraper()
-    else:
-        raise ValueError(f"No scraper defined for url: {url}")
