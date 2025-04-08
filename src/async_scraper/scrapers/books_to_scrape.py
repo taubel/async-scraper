@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 async def get_page_contents(url: str) -> str:
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=60)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(url) as resp:
             resp.raise_for_status()
             return await resp.text()
@@ -173,9 +174,14 @@ class BooksToScrapeScraper(ScraperInterface):
 
     # TODO typehint callback
     async def scrape_home(self, url: str, parse_callback: Callable):
+        # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
         except aiohttp.ClientResponseError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
+            return
+        except asyncio.TimeoutError as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
@@ -203,9 +209,14 @@ class BooksToScrapeScraper(ScraperInterface):
     # TODO typehint callback
     async def scrape_category(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping category: {url}")
+        # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
         except aiohttp.ClientResponseError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
+            return
+        except asyncio.TimeoutError as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
@@ -238,12 +249,16 @@ class BooksToScrapeScraper(ScraperInterface):
     # TODO typehint callback
     async def scrape_book(self, url: str, parse_callback: Callable):
         logger.debug(f"Scraping book: {url}")
+        # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
         except aiohttp.ClientResponseError as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
+        except asyncio.TimeoutError as e:
+            logger.error(f"Failed to get page contents from {url}")
+            logger.error(e)
         try:
             parsed = BookParser.parse(contents, url)
         except ValueError as e:
