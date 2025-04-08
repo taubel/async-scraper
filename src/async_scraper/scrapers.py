@@ -261,7 +261,7 @@ class OxylabsSandboxScraper(ScraperInterface):
     pass
 
 
-def create_parser(url: str) -> ScraperInterface:
+def create_scraper(url: str) -> ScraperInterface:
     if re.match(r"^https?://books.toscrape.com.*$", url):
         return BooksToScrapeScraper()
     elif re.match(r"^https?://sandbox.oxylabs.io/products.*$", url):

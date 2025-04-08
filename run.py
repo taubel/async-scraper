@@ -2,13 +2,13 @@ import asyncio
 
 import click
 
-from async_scraper.scrapers import create_parser
+from async_scraper.scrapers import create_scraper
 
 
 @click.command()
 @click.argument("url")
 def run_scraper(url):
-    scraper = create_parser(url)
+    scraper = create_scraper(url)
     asyncio.run(scraper.scrape(url))
 
 
