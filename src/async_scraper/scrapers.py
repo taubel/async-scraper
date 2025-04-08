@@ -38,8 +38,7 @@ class BookParser(ParserInterface):
         book_soup = BeautifulSoup(contents, "html.parser")
         product_main = book_soup.find("div", class_="col-sm-6 product_main")
         if not product_main:
-            logger.debug("No book data found")
-            return {}
+            raise ValueError(f"No book data found for url {url}")
 
         name = product_main.h1.contents[0]
         price_tag = product_main.find("p", class_="price_color")
@@ -244,7 +243,11 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
-        parsed = BookParser.parse(contents, url)
+        try:
+            parsed = BookParser.parse(contents, url)
+        except ValueError as e:
+            logger.warning(e)
+            return
         parse_callback(url, parsed)
 
 
