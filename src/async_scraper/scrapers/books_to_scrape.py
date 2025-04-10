@@ -177,6 +177,10 @@ class BooksToScrapeScraper(ScraperInterface):
         else:
             raise ValueError(f"Url: {url} does not match any defined page")
         print(parsed)
+        # TODO this is bad design, only done so that ParserWorker stops
+        #  ParserWorker should run independently
+        await self.parser_queue.join()
+        self.parser_queue.shutdown()
 
     # TODO typehint callback
     async def scrape_home(self, url: str, parse_callback: Callable):

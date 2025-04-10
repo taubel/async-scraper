@@ -2,6 +2,7 @@ import asyncio
 
 import click
 
+from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
 
 
@@ -10,7 +11,14 @@ from async_scraper.scrapers import create_scraper
 def run_scraper(url):
     queue = asyncio.Queue()
     scraper = create_scraper(url, queue)
-    asyncio.run(scraper.scrape(url))
+    parser_worker = ParserWorker(queue)
+
+    async def worker():
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(scraper.scrape(url))
+            tg.create_task(parser_worker.run())
+
+    asyncio.run(worker())
 
 
 if __name__ == "__main__":
