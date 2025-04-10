@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import functools
 import logging
 import re
-from typing import Callable
+from typing import Callable, Any
 from urllib.parse import urlparse, urljoin
 
 import aiohttp
@@ -25,8 +25,12 @@ async def get_page_contents(url: str) -> str:
             return await resp.text()
 
 
-def add_to_dict(in_dict, key, value):
+async def add_to_dict(in_dict: dict, key: str, value: Any):
     in_dict[key] = value
+
+
+async def add_to_queue(queue: asyncio.Queue, item: dict):
+    await queue.put(item)
 
 
 class ParserInterface(ABC):
@@ -142,7 +146,9 @@ class BookPage(Page):
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
-    def __init__(self):
+    def __init__(self, parser_queue: asyncio.Queue):
+        self.parser_queue = parser_queue
+
         self.pages = {
             # TODO typehint scraping callback
             HomePage: {"scraper": self.scrape_home},
@@ -204,7 +210,7 @@ class BooksToScrapeScraper(ScraperInterface):
             tasks.append(task)
 
         await asyncio.gather(*tasks)
-        parse_callback(url, parsed)
+        await parse_callback(url, parsed)
 
     # TODO typehint callback
     async def scrape_category(self, url: str, parse_callback: Callable):
@@ -221,7 +227,8 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(e)
             return
         parsed = CategoryParser.parse(contents, url)
-        callback = functools.partial(add_to_dict, parsed)
+        # FIXME this function implies that the callback will be used by 'scrape_book' only
+        callback = functools.partial(add_to_queue, self.parser_queue)
 
         tasks = []
         for link in parsed["links"]:
@@ -244,10 +251,10 @@ class BooksToScrapeScraper(ScraperInterface):
             tasks.append(task)
 
         await asyncio.gather(*tasks)
-        parse_callback(url, parsed)
+        await parse_callback(url, parsed)
 
     # TODO typehint callback
-    async def scrape_book(self, url: str, parse_callback: Callable):
+    async def scrape_book(self, url: str, scrape_callback: Callable):
         logger.debug(f"Scraping book: {url}")
         # FIXME define function for getting contents and calling appropriate parser
         try:
@@ -259,9 +266,11 @@ class BooksToScrapeScraper(ScraperInterface):
         except asyncio.TimeoutError as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
-        try:
-            parsed = BookParser.parse(contents, url)
-        except ValueError as e:
-            logger.warning(e)
             return
-        parse_callback(url, parsed)
+        # TODO typehint item
+        item = {
+            "parser": BookParser,
+            "contents": contents,
+            "url": url,
+        }
+        await scrape_callback(item)

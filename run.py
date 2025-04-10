@@ -8,7 +8,8 @@ from async_scraper.scrapers import create_scraper
 @click.command()
 @click.argument("url")
 def run_scraper(url):
-    scraper = create_scraper(url)
+    queue = asyncio.Queue()
+    scraper = create_scraper(url, queue)
     asyncio.run(scraper.scrape(url))
 
 
