@@ -8,3 +8,6 @@ class OxylabsSandboxScraper(ScraperInterface):
 
     def __init__(self, parser_queue: asyncio.Queue):
         self.parser_queue = parser_queue
+
+    async def scrape(self, url: str):
+        raise NotImplementedError
