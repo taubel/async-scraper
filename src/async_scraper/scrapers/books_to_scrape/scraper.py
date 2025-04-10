@@ -10,7 +10,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from ..interfaces import ScraperInterface
+from async_scraper.interfaces import ScraperInterface
 
 
 logging.basicConfig(level=logging.DEBUG)
