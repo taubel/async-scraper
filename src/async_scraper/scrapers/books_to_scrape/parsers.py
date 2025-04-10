@@ -1,8 +1,13 @@
 from urllib.parse import urljoin
 
 from async_scraper.interfaces import ParserInterface
-from async_scraper.scrapers.books_to_scrape.scraper import BookModel
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
+
+
+class BookModel(BaseModel):
+    name: str
+    price: str
 
 
 class BookParser(ParserInterface):

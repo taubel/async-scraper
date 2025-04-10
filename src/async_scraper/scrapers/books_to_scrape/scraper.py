@@ -31,11 +31,6 @@ async def add_to_queue(queue: asyncio.Queue, item: dict):
     await queue.put(item)
 
 
-class BookModel(BaseModel):
-    name: str
-    price: str
-
-
 class Page:
     # TODO make paths an abstract attribute
     paths: list[str] = []
