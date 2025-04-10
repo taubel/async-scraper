@@ -6,9 +6,9 @@ from typing import Callable, Any
 from urllib.parse import urlparse
 
 import aiohttp
-from pydantic import BaseModel
 
 from .parsers import BookParser, HomeParser, CategoryParser
+from ...common.models import ParserItemModel
 from ...interfaces import ScraperInterface
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def add_to_dict(in_dict: dict, key: str, value: Any):
     in_dict[key] = value
 
 
-async def add_to_queue(queue: asyncio.Queue, item: dict):
+async def add_to_queue(queue: asyncio.Queue[ParserItemModel], item: ParserItemModel):
     await queue.put(item)
 
 
@@ -77,7 +77,7 @@ class BookPage(Page):
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
-    def __init__(self, parser_queue: asyncio.Queue):
+    def __init__(self, parser_queue: asyncio.Queue[ParserItemModel]):
         self.parser_queue = parser_queue
 
         self.pages = {
@@ -203,10 +203,5 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
-        # TODO typehint item
-        item = {
-            "parser": BookParser,
-            "contents": contents,
-            "url": url,
-        }
+        item = ParserItemModel(parser=BookParser, contents=contents, url=url)
         await scrape_callback(item)

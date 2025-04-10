@@ -1,13 +1,14 @@
 import asyncio
 import logging
 
+from .common.models import ParserItemModel
 from .interfaces import ParserInterface
 
 logger = logging.getLogger(__name__)
 
 
 class ParserWorker:
-    def __init__(self, parser_queue: asyncio.Queue):
+    def __init__(self, parser_queue: asyncio.Queue[ParserItemModel]):
         self.parser_queue = parser_queue
 
     async def run(self):
@@ -17,9 +18,9 @@ class ParserWorker:
             except asyncio.QueueShutDown:
                 logger.debug("ParserWorker shutting down")
                 break
-            url = item["url"]
-            parser_class = item["parser"]
-            contents = item["contents"]
+            url = item.url
+            parser_class = item.parser
+            contents = item.contents
 
             # TODO typehint item
             logger.debug("Parsing:")
