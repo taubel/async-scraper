@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from .scrapers.books_to_scrape import ParserInterface
+from .interfaces import ParserInterface
 
 logger = logging.getLogger(__name__)
 
