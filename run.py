@@ -1,9 +1,12 @@
 import asyncio
+import logging
 
 import click
 
 from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 # TODO allow list of urls

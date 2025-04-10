@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from .parsers import BookParser, HomeParser, CategoryParser
 from ...interfaces import ScraperInterface
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
