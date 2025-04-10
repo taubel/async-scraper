@@ -3,14 +3,13 @@ import functools
 import logging
 import re
 from typing import Callable, Any
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 
 import aiohttp
-from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from async_scraper.interfaces import ScraperInterface, ParserInterface
-
+from .parsers import BookParser, HomeParser, CategoryParser
+from ...interfaces import ScraperInterface
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -36,61 +35,6 @@ async def add_to_queue(queue: asyncio.Queue, item: dict):
 class BookModel(BaseModel):
     name: str
     price: str
-
-
-class BookParser(ParserInterface):
-    @classmethod
-    def parse(cls, contents: str, url: str) -> BookModel:
-        book_soup = BeautifulSoup(contents, "html.parser")
-        product_main = book_soup.find("div", class_="col-sm-6 product_main")
-        if not product_main:
-            raise ValueError(f"No book data found for url {url}")
-
-        name = product_main.h1.contents[0]
-        price_tag = product_main.find("p", class_="price_color")
-        assert price_tag, f"{name} does not contain a price (can't be)"
-        price_str = str(price_tag.contents[0])
-        return BookModel(name=name, price=price_str)
-
-
-class HomeParser(ParserInterface):
-    @classmethod
-    def parse(cls, contents: str, url: str) -> dict:
-        soup = BeautifulSoup(contents, "html.parser")
-
-        links = []
-        for link in soup.find_all("a"):
-            href = link.get("href")
-            if not href:
-                continue
-            url_joined = urljoin(url, href)
-            links.append(url_joined)
-
-        # Leave only unique links
-        links = list(set(links))
-        return {
-            "links": links,
-        }
-
-
-class CategoryParser(ParserInterface):
-    @classmethod
-    def parse(cls, contents: str, url: str) -> dict:
-        soup = BeautifulSoup(contents, "html.parser")
-
-        links = []
-        for link in soup.find_all("a"):
-            href = link.get("href")
-            if not href:
-                continue
-            url_joined = urljoin(url, href)
-            links.append(url_joined)
-
-        # Leave only unique links
-        links = list(set(links))
-        return {
-            "links": links,
-        }
 
 
 class Page:
