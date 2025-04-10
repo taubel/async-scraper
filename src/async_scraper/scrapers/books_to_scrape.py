@@ -25,6 +25,7 @@ async def get_page_contents(url: str) -> str:
             return await resp.text()
 
 
+# TODO turn into package
 async def add_to_dict(in_dict: dict, key: str, value: Any):
     in_dict[key] = value
 
@@ -195,6 +196,7 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
+        # TODO move home and category page parsing to parser_queue
         parsed = HomeParser.parse(contents, url)
         callback = functools.partial(add_to_dict, parsed)
 

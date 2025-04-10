@@ -6,6 +6,7 @@ from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
 
 
+# TODO allow list of urls
 @click.command()
 @click.argument("url")
 def run_scraper(url):
