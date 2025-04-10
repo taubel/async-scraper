@@ -1,5 +1,4 @@
 import asyncio
-from abc import ABC, abstractmethod
 import functools
 import logging
 import re
@@ -10,7 +9,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
-from async_scraper.interfaces import ScraperInterface
+from async_scraper.interfaces import ScraperInterface, ParserInterface
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -32,13 +31,6 @@ async def add_to_dict(in_dict: dict, key: str, value: Any):
 
 async def add_to_queue(queue: asyncio.Queue, item: dict):
     await queue.put(item)
-
-
-class ParserInterface(ABC):
-    @classmethod
-    @abstractmethod
-    def parse(cls, contents: str, url: str) -> dict:
-        pass
 
 
 class BookModel(BaseModel):
