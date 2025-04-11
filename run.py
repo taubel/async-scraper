@@ -5,6 +5,7 @@ import click
 
 from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
+from async_scraper.parser_database import JSONDatabase
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -15,7 +16,8 @@ logging.basicConfig(level=logging.DEBUG)
 def run_scraper(url):
     queue = asyncio.Queue()
     scraper = create_scraper(url, queue)
-    parser_worker = ParserWorker(queue)
+    database = JSONDatabase("/tmp/data.json")
+    parser_worker = ParserWorker(queue, database)
 
     async def worker():
         async with asyncio.TaskGroup() as tg:
