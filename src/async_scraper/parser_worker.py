@@ -34,4 +34,4 @@ class ParserWorker:
             parsed: BookModel = parser.parse(contents, url)
             self.parser_queue.task_done()
 
-            self.database.add(url, parsed.model_dump())
+            await self.database.add(url, parsed.model_dump())

@@ -2,6 +2,8 @@ import json
 import pathlib
 from typing import Any, Iterator
 
+from anyio import open_file
+
 
 class JSONDatabase:
     def __init__(self, path_to_file: str):
@@ -11,20 +13,23 @@ class JSONDatabase:
 
         self.path_to_file = path_to_file
 
-    def add(self, key: str, value: Any):
+    async def add(self, key: str, value: Any):
         try:
-            with open(self.path_to_file, "r") as f:
-                data = json.load(f)
+            async with await open_file(self.path_to_file, "r") as f:
+                contents = await f.read()
+            data = json.loads(contents)
         except FileNotFoundError:
             data = {}
 
         data[key] = value
-        with open(self.path_to_file, "w") as f:
-            json.dump(data, f)
+        data_j = json.dumps(data)
+        async with await open_file(self.path_to_file, "w") as f:
+            await f.write(data_j)
 
-    def get(self, key: str):
-        with open(self.path_to_file, "r") as f:
-            data = json.load(f)
+    async def get(self, key: str):
+        async with await open_file(self.path_to_file, "r") as f:
+            contents = await f.read()
+        data = json.loads(contents)
         return data[key]
 
     def __iter__(self) -> Iterator[tuple[str, Any]]:
