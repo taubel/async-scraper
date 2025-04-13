@@ -17,8 +17,8 @@ class ParserWorker:
     async def run(self):
         while True:
             try:
-                item = await self.parser_queue.get()
-            except asyncio.QueueShutDown:
+                item = self.parser_queue.get_nowait()
+            except (asyncio.QueueShutDown, asyncio.QueueEmpty):
                 logger.debug("ParserWorker shutting down")
                 break
             url = item.url

@@ -20,9 +20,8 @@ def run_scraper(url):
     parser_worker = ParserWorker(queue, database)
 
     async def worker():
-        async with asyncio.TaskGroup() as tg:
-            tg.create_task(scraper.scrape(url))
-            tg.create_task(parser_worker.run())
+        await scraper.scrape(url)
+        await parser_worker.run()
 
     asyncio.run(worker())
 
