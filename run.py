@@ -19,11 +19,8 @@ def run_scraper(url):
     database = JSONDatabase("/tmp/data.json")
     parser_worker = ParserWorker(queue, database)
 
-    async def worker():
-        await scraper.scrape(url)
-        await parser_worker.run()
-
-    asyncio.run(worker())
+    asyncio.run(scraper.scrape(url))
+    parser_worker.run()
 
     click.echo("Parsed data:")
     for url, data in database:

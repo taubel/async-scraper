@@ -38,7 +38,7 @@ class ParserWorker:
         self.parser_queue = parser_queue
         self.database = database
 
-    async def run(self):
+    def run(self):
         logger.debug("Running parse processes")
         with ProcessPoolExecutor() as executor:
             # TODO make process amount configurable
