@@ -2,7 +2,8 @@ import asyncio
 import functools
 import logging
 import re
-from typing import Callable, Any
+from collections.abc import Callable
+from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
