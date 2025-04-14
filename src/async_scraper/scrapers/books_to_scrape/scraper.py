@@ -107,8 +107,7 @@ class BooksToScrapeScraper(ScraperInterface):
             raise ValueError(f"No scraper found for link {link}")
 
     async def scrape(self, url: str):
-        parsed = {}
-        callback = functools.partial(add_to_sync_queue, parsed)
+        callback = functools.partial(add_to_sync_queue, self.parser_queue)
 
         parsed_url = urlparse(url)
         for page, value in self.pages.items():
@@ -120,37 +119,32 @@ class BooksToScrapeScraper(ScraperInterface):
 
         logger.debug(f"Finished scraping {url}")
 
-    async def scrape_home(self, url: str, scrape_callback: ScrapeCallback):
-        # FIXME define function for getting contents and calling appropriate parser
+    async def scrape_url(self, url: str) -> str | None:
         try:
             contents = await get_page_contents(url)
+            return contents
         except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
-            return
-        item = ParserItemModel(parser=HomeParser, contents=contents, url=url)
-        await scrape_callback(item)
+            return None
+
+    async def scrape_home(self, url: str, scrape_callback: ScrapeCallback):
+        logger.debug(f"Scraping home page: {url}")
+        contents = await self.scrape_url(url)
+        if contents:
+            item = ParserItemModel(parser=HomeParser, contents=contents, url=url)
+            await scrape_callback(item)
 
     async def scrape_category(self, url: str, scrape_callback: ScrapeCallback):
         logger.debug(f"Scraping category: {url}")
-        # FIXME define function for getting contents and calling appropriate parser
-        try:
-            contents = await get_page_contents(url)
-        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
-            logger.error(f"Failed to get page contents from {url}")
-            logger.error(e)
-            return
-        item = ParserItemModel(parser=CategoryParser, contents=contents, url=url)
-        await scrape_callback(item)
+        contents = await self.scrape_url(url)
+        if contents:
+            item = ParserItemModel(parser=CategoryParser, contents=contents, url=url)
+            await scrape_callback(item)
 
     async def scrape_book(self, url: str, scrape_callback: ScrapeCallback):
         logger.debug(f"Scraping book: {url}")
-        # FIXME define function for getting contents and calling appropriate parser
-        try:
-            contents = await get_page_contents(url)
-        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
-            logger.error(f"Failed to get page contents from {url}")
-            logger.error(e)
-            return
-        item = ParserItemModel(parser=BookParser, contents=contents, url=url)
-        await scrape_callback(item)
+        contents = await self.scrape_url(url)
+        if contents:
+            item = ParserItemModel(parser=BookParser, contents=contents, url=url)
+            await scrape_callback(item)
