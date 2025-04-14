@@ -1,8 +1,8 @@
 import asyncio
 import logging
-from concurrent.futures import ProcessPoolExecutor
+import queue
+from concurrent.futures import ProcessPoolExecutor, wait
 
-from .common.models import ParserItemModel
 from .interfaces import ParserInterface
 from .parser_database import JSONDatabase
 from .scrapers.books_to_scrape.parsers import BookModel
@@ -10,11 +10,11 @@ from .scrapers.books_to_scrape.parsers import BookModel
 logger = logging.getLogger(__name__)
 
 
-def parse(parser_queue: asyncio.Queue[ParserItemModel], database: JSONDatabase):
+def parse(parser_queue, database: JSONDatabase):
     while True:
         try:
             item = parser_queue.get_nowait()
-        except (asyncio.QueueShutDown, asyncio.QueueEmpty):
+        except queue.Empty:
             logger.debug("ParserWorker shutting down")
             break
         url = item.url
@@ -34,7 +34,7 @@ def parse(parser_queue: asyncio.Queue[ParserItemModel], database: JSONDatabase):
 
 
 class ParserWorker:
-    def __init__(self, parser_queue: asyncio.Queue[ParserItemModel], database: JSONDatabase):
+    def __init__(self, parser_queue, database: JSONDatabase):
         self.parser_queue = parser_queue
         self.database = database
 

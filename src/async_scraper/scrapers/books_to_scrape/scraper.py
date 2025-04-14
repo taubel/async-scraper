@@ -27,8 +27,14 @@ async def add_to_dict(in_dict: dict, key: str, value: Any):
     in_dict[key] = value
 
 
-async def add_to_queue(queue: asyncio.Queue[ParserItemModel], item: ParserItemModel):
+# TODO add_to_async_queue and add_to_sync_queue depend on implementation details
+#  There should be a wrapper that provides async methods and hides the underlying queue implementation
+async def add_to_async_queue(queue: asyncio.Queue[ParserItemModel], item: ParserItemModel):
     await queue.put(item)
+
+
+async def add_to_sync_queue(queue, item: ParserItemModel):
+    queue.put(item)
 
 
 class Page:
@@ -77,7 +83,7 @@ class BookPage(Page):
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
-    def __init__(self, parser_queue: asyncio.Queue[ParserItemModel]):
+    def __init__(self, parser_queue):
         self.parser_queue = parser_queue
 
         self.pages = {
@@ -161,7 +167,7 @@ class BooksToScrapeScraper(ScraperInterface):
             return
         parsed = CategoryParser.parse(contents, url)
         # FIXME this function implies that the callback will be used by 'scrape_book' only
-        callback = functools.partial(add_to_queue, self.parser_queue)
+        callback = functools.partial(add_to_sync_queue, self.parser_queue)
 
         tasks = []
         for link in parsed["links"]:

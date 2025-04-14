@@ -1,11 +1,12 @@
 import asyncio
 import logging
+import multiprocessing
 
 import click
 
+from async_scraper.parser_database import JSONDatabase
 from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
-from async_scraper.parser_database import JSONDatabase
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,12 +15,13 @@ logging.basicConfig(level=logging.DEBUG)
 @click.command()
 @click.argument("url")
 def run_scraper(url):
-    queue = asyncio.Queue()
+    queue = multiprocessing.Queue()
     scraper = create_scraper(url, queue)
     database = JSONDatabase("/tmp/data.json")
     parser_worker = ParserWorker(queue, database)
 
     asyncio.run(scraper.scrape(url))
+    # FIXME QueueFeederThread stays running
     parser_worker.run()
 
     click.echo("Parsed data:")
