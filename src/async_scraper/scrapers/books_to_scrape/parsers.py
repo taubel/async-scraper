@@ -5,14 +5,26 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
 
-class BookModel(BaseModel):
+class BasePageModel(BaseModel):
+    pass
+
+
+class BookPageModel(BaseModel):
     name: str
     price: str
 
 
+class HomePageModel(BaseModel):
+    links: list[str]
+
+
+class CategoryPageModel(BaseModel):
+    links: list[str]
+
+
 class BookParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str, url: str) -> BookModel:
+    def parse(cls, contents: str, url: str) -> BookPageModel:
         book_soup = BeautifulSoup(contents, "html.parser")
         product_main = book_soup.find("div", class_="col-sm-6 product_main")
         if not product_main:
@@ -22,12 +34,13 @@ class BookParser(ParserInterface):
         price_tag = product_main.find("p", class_="price_color")
         assert price_tag, f"{name} does not contain a price (can't be)"
         price_str = str(price_tag.contents[0])
-        return BookModel(name=name, price=price_str)
+        return BookPageModel(name=name, price=price_str)
 
 
+# TODO define models
 class HomeParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str, url: str) -> dict:
+    def parse(cls, contents: str, url: str) -> HomePageModel:
         soup = BeautifulSoup(contents, "html.parser")
 
         links = []
@@ -40,14 +53,12 @@ class HomeParser(ParserInterface):
 
         # Leave only unique links
         links = list(set(links))
-        return {
-            "links": links,
-        }
+        return HomePageModel(links=links)
 
 
 class CategoryParser(ParserInterface):
     @classmethod
-    def parse(cls, contents: str, url: str) -> dict:
+    def parse(cls, contents: str, url: str) -> CategoryPageModel:
         soup = BeautifulSoup(contents, "html.parser")
 
         links = []
@@ -60,6 +71,4 @@ class CategoryParser(ParserInterface):
 
         # Leave only unique links
         links = list(set(links))
-        return {
-            "links": links,
-        }
+        return CategoryPageModel(links=links)

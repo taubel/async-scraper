@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor, wait
 
 from .interfaces import ParserInterface
 from .parser_database import JSONDatabase
-from .scrapers.books_to_scrape.parsers import BookModel
+from .scrapers.books_to_scrape.parsers import BasePageModel
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,7 @@ def parse(parser_queue, database: JSONDatabase):
         logger.debug(f"parser: {parser_class}")
 
         parser: ParserInterface = parser_class()
-        # TODO type needs to be enforced
-        parsed: BookModel = parser.parse(contents, url)
-        parser_queue.task_done()
+        parsed: BasePageModel = parser.parse(contents, url)
 
         asyncio.run(database.add(url, parsed.model_dump()))
 
