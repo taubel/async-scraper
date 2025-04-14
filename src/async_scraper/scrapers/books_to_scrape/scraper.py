@@ -3,7 +3,7 @@ import functools
 import logging
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Awaitable
 from urllib.parse import urlparse
 
 import aiohttp
@@ -13,6 +13,9 @@ from ...common.models import ParserItemModel
 from ...interfaces import ScraperInterface
 
 logger = logging.getLogger(__name__)
+
+
+type ScrapeCallback = Callable[[ParserItemModel], Awaitable[None]]
 
 
 async def get_page_contents(url: str) -> str:
@@ -117,8 +120,7 @@ class BooksToScrapeScraper(ScraperInterface):
 
         logger.debug(f"Finished scraping {url}")
 
-    # TODO typehint callback
-    async def scrape_home(self, url: str, scrape_callback: Callable):
+    async def scrape_home(self, url: str, scrape_callback: ScrapeCallback):
         # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
@@ -133,8 +135,7 @@ class BooksToScrapeScraper(ScraperInterface):
         item = ParserItemModel(parser=HomeParser, contents=contents, url=url)
         await scrape_callback(item)
 
-    # TODO typehint callback
-    async def scrape_category(self, url: str, scrape_callback: Callable):
+    async def scrape_category(self, url: str, scrape_callback: ScrapeCallback):
         logger.debug(f"Scraping category: {url}")
         # FIXME define function for getting contents and calling appropriate parser
         try:
@@ -150,8 +151,7 @@ class BooksToScrapeScraper(ScraperInterface):
         item = ParserItemModel(parser=CategoryParser, contents=contents, url=url)
         await scrape_callback(item)
 
-    # TODO typehint callback
-    async def scrape_book(self, url: str, scrape_callback: Callable):
+    async def scrape_book(self, url: str, scrape_callback: ScrapeCallback):
         logger.debug(f"Scraping book: {url}")
         # FIXME define function for getting contents and calling appropriate parser
         try:
