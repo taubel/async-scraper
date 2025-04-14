@@ -124,11 +124,7 @@ class BooksToScrapeScraper(ScraperInterface):
         # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
-        except aiohttp.ClientResponseError as e:
-            logger.error(f"Failed to get page contents from {url}")
-            logger.error(e)
-            return
-        except asyncio.TimeoutError as e:
+        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
@@ -140,11 +136,7 @@ class BooksToScrapeScraper(ScraperInterface):
         # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
-        except aiohttp.ClientResponseError as e:
-            logger.error(f"Failed to get page contents from {url}")
-            logger.error(e)
-            return
-        except asyncio.TimeoutError as e:
+        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
@@ -156,11 +148,7 @@ class BooksToScrapeScraper(ScraperInterface):
         # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
-        except aiohttp.ClientResponseError as e:
-            logger.error(f"Failed to get page contents from {url}")
-            logger.error(e)
-            return
-        except asyncio.TimeoutError as e:
+        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
