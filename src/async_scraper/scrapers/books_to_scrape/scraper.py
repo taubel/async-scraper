@@ -104,7 +104,7 @@ class BooksToScrapeScraper(ScraperInterface):
 
     async def scrape(self, url: str):
         parsed = {}
-        callback = functools.partial(add_to_dict, parsed)
+        callback = functools.partial(add_to_sync_queue, parsed)
 
         parsed_url = urlparse(url)
         for page, value in self.pages.items():
@@ -117,7 +117,7 @@ class BooksToScrapeScraper(ScraperInterface):
         logger.debug(f"Finished scraping {url}")
 
     # TODO typehint callback
-    async def scrape_home(self, url: str, parse_callback: Callable):
+    async def scrape_home(self, url: str, scrape_callback: Callable):
         # FIXME define function for getting contents and calling appropriate parser
         try:
             contents = await get_page_contents(url)
@@ -129,30 +129,11 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
-        # TODO move home and category page parsing to parser_queue
-        parsed = HomeParser.parse(contents, url)
-        callback = functools.partial(add_to_dict, parsed)
-
-        tasks = []
-        for link in parsed["links"]:
-            logger.debug(f"Found link: {link}")
-            # Avoid looping the same page
-            if HomePage.match(link):
-                logger.debug(f"Link matched home page: {link}")
-                continue
-
-            try:
-                task = self._create_scraping_task(link, callback)
-            except ValueError as e:
-                logger.error(e)
-                continue
-            tasks.append(task)
-
-        await asyncio.gather(*tasks)
-        await parse_callback(url, parsed)
+        item = ParserItemModel(parser=HomeParser, contents=contents, url=url)
+        await scrape_callback(item)
 
     # TODO typehint callback
-    async def scrape_category(self, url: str, parse_callback: Callable):
+    async def scrape_category(self, url: str, scrape_callback: Callable):
         logger.debug(f"Scraping category: {url}")
         # FIXME define function for getting contents and calling appropriate parser
         try:
@@ -165,32 +146,8 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(f"Failed to get page contents from {url}")
             logger.error(e)
             return
-        parsed = CategoryParser.parse(contents, url)
-        # FIXME this function implies that the callback will be used by 'scrape_book' only
-        callback = functools.partial(add_to_sync_queue, self.parser_queue)
-
-        tasks = []
-        for link in parsed["links"]:
-            # FIXME this pattern of defining what pages to skip in all scrapers is error prone
-            logger.debug(f"Found link: {link}")
-            # Avoid looping the same page
-            if HomePage.match(link):
-                logger.debug(f"Link matched home page: {link}")
-                continue
-            # Avoid scraping other categories
-            elif CategoryPage.match(link):
-                logger.debug(f"Link matched other category page: {link}")
-                continue
-
-            try:
-                task = self._create_scraping_task(link, callback)
-            except ValueError as e:
-                logger.error(e)
-                continue
-            tasks.append(task)
-
-        await asyncio.gather(*tasks)
-        await parse_callback(url, parsed)
+        item = ParserItemModel(parser=CategoryParser, contents=contents, url=url)
+        await scrape_callback(item)
 
     # TODO typehint callback
     async def scrape_book(self, url: str, scrape_callback: Callable):
