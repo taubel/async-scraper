@@ -13,13 +13,17 @@ class JSONDatabase:
 
         self.path_to_file = path_to_file
 
-    async def add(self, key: str, value: Any):
+    async def _read(self) -> dict:
         try:
             async with await open_file(self.path_to_file, "r") as f:
                 contents = await f.read()
             data = json.loads(contents)
         except FileNotFoundError:
             data = {}
+        return data
+
+    async def add(self, key: str, value: Any):
+        data = await self._read()
 
         data[key] = value
         data_j = json.dumps(data)
@@ -27,9 +31,7 @@ class JSONDatabase:
             await f.write(data_j)
 
     async def get(self, key: str):
-        async with await open_file(self.path_to_file, "r") as f:
-            contents = await f.read()
-        data = json.loads(contents)
+        data = await self._read()
         return data[key]
 
     # TODO create separate implementations for a sync and async JSONDatabase
