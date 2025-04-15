@@ -8,6 +8,11 @@ from anyio import open_file
 logger = logging.getLogger(__name__)
 
 
+# TODO use jsonl
+# The JSON Lines format is useful because it’s stream-like, so you can easily append new records to it.
+# It doesn’t have the same problem as JSON when you run twice.
+# Also, as each record is a separate line, you can process big files without having to fit everything in memory,
+# there are tools like JQ to help do that at the command-line.
 class JSONDatabase:
     def __init__(self, path_to_file: str, lock):
         path = pathlib.Path(path_to_file)
