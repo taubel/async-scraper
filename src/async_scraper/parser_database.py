@@ -32,9 +32,13 @@ class JSONDatabase:
         data = json.loads(contents)
         return data[key]
 
+    # TODO create separate implementations for a sync and async JSONDatabase
     def __iter__(self) -> Iterator[tuple[str, Any]]:
-        with open(self.path_to_file, "r") as f:
-            data = json.load(f)
+        try:
+            with open(self.path_to_file, "r") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            data = {}
 
         for key, value in data.items():
             yield key, value
