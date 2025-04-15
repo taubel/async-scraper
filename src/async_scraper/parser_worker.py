@@ -40,8 +40,13 @@ class ParserWorker:
         logger.debug("Running parse processes")
         with ProcessPoolExecutor() as executor:
             # TODO using executor does not work
-            parse(self.parser_queue, self.database)
             # TODO make process amount configurable
-            # for i in range(3):
-            #     executor.submit(parse, self.parser_queue, self.database)
+            futures = [
+                executor.submit(parse, self.parser_queue, self.database) for _ in range(3)
+            ]
+            for future in futures:
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.exception(e)
         logger.debug("Parse processes finished")
