@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import queue
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor
 
 from .interfaces import ParserInterface
 from .parser_database import JSONDatabase
@@ -39,8 +39,11 @@ class ParserWorker:
 
     def run(self):
         logger.debug("Running parse processes")
-        with ProcessPoolExecutor() as executor:
-            # TODO using executor does not work
+        # FIXME this would benefit from splitting parsing into multiple processes instead of threads
+        #  but parser_queue and database were not designed as pickleable.
+        #  Either refactor existing classes, or separate scraping and parsing into different processes
+        #  and implement IPC using atomic databases
+        with ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(parse, self.parser_queue, self.database)
                 for _ in range(self.worker_count)
