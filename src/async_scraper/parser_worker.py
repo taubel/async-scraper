@@ -32,17 +32,18 @@ def parse(parser_queue, database: JSONDatabase):
 
 
 class ParserWorker:
-    def __init__(self, parser_queue, database: JSONDatabase):
+    def __init__(self, parser_queue, database: JSONDatabase, worker_count: int = 3):
         self.parser_queue = parser_queue
         self.database = database
+        self.worker_count = worker_count
 
     def run(self):
         logger.debug("Running parse processes")
         with ProcessPoolExecutor() as executor:
             # TODO using executor does not work
-            # TODO make process amount configurable
             futures = [
-                executor.submit(parse, self.parser_queue, self.database) for _ in range(3)
+                executor.submit(parse, self.parser_queue, self.database)
+                for _ in range(self.worker_count)
             ]
             for future in futures:
                 try:
