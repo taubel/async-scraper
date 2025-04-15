@@ -17,7 +17,8 @@ logging.basicConfig(level=logging.DEBUG)
 def run_scraper(url):
     queue = multiprocessing.Queue()
     scraper = create_scraper(url, queue)
-    database = JSONDatabase("/tmp/data.json")
+    lock = multiprocessing.Lock()
+    database = JSONDatabase("/tmp/data.json", lock)
     parser_worker = ParserWorker(queue, database)
 
     asyncio.run(scraper.scrape(url))
