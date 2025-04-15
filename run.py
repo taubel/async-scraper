@@ -22,7 +22,6 @@ def run_scraper(url):
     parser_worker = ParserWorker(queue, database)
 
     asyncio.run(scraper.scrape(url))
-    # FIXME QueueFeederThread stays running
     parser_worker.run()
 
     click.echo("Parsed data:")
