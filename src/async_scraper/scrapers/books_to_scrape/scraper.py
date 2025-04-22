@@ -7,6 +7,7 @@ from typing import Any, Awaitable
 from urllib.parse import urlparse
 
 import aiohttp
+from pydantic import BaseModel
 
 from .parsers import BookParser, HomeParser, CategoryParser
 from ...common.models import ParserItemModel
@@ -84,24 +85,26 @@ class BookPage(Page):
     ]
 
 
+class PageConfig(BaseModel):
+    parser: type[ParserInterface]
+
+
 class BooksToScrapeScraper(ScraperInterface):
     # https://books.toscrape.com/index.html
 
     def __init__(self, parser_queue):
         self.parser_queue = parser_queue
 
-        # TODO create model for page configurations
         self.pages = {
-            HomePage: {"parser": HomeParser},
-            CategoryPage: {"parser": CategoryParser},
-            BookPage: {"parser": BookParser},
+            HomePage: PageConfig(parser=HomeParser),
+            CategoryPage: PageConfig(parser=CategoryParser),
+            BookPage: PageConfig(parser=BookParser),
         }
 
     def _create_scraping_task(self, link: str, callback: Callable) -> asyncio.Task:
-        for page, value in self.pages.items():
+        for page, config in self.pages.items():
             if page.match(link):
-                parser = value["parser"]
-                task = asyncio.create_task(self.scrape_page(link, callback, parser))
+                task = asyncio.create_task(self.scrape_page(link, callback, config.parser))
                 return task
         else:
             raise ValueError(f"No scraper found for link {link}")
@@ -110,10 +113,9 @@ class BooksToScrapeScraper(ScraperInterface):
         callback = functools.partial(add_to_sync_queue, self.parser_queue)
 
         parsed_url = urlparse(url)
-        for page, value in self.pages.items():
+        for page, config in self.pages.items():
             if page.match(parsed_url.path):
-                parser = value["parser"]
-                await self.scrape_page(url, callback, parser)
+                await self.scrape_page(url, callback, config.parser)
                 break
         else:
             raise ValueError(f"Url: {url} does not match any defined page")
