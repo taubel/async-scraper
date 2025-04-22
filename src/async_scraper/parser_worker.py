@@ -3,32 +3,36 @@ import logging
 import queue
 from concurrent.futures import ThreadPoolExecutor
 
-from .interfaces import ParserInterface
+from .common.models import ParserItemModel
 from .parser_database import JSONDatabase
 from .scrapers.books_to_scrape.parsers import BasePageModel
 
 logger = logging.getLogger(__name__)
 
 
+def parse_item(item: ParserItemModel) -> BasePageModel:
+    url = item.url
+    parser_class = item.parser
+    contents = item.contents
+
+    logger.debug("Parsing:")
+    logger.debug(f"url: {url}")
+    logger.debug(f"parser: {parser_class}")
+
+    parser = parser_class()
+    parsed = parser.parse(contents, url)
+    return parsed
+
+
 def parse(parser_queue, database: JSONDatabase):
     while True:
         try:
-            item = parser_queue.get_nowait()
+            item: ParserItemModel = parser_queue.get_nowait()
         except queue.Empty:
             logger.debug("ParserWorker shutting down")
             break
-        url = item.url
-        parser_class = item.parser
-        contents = item.contents
-
-        logger.debug("Parsing:")
-        logger.debug(f"url: {url}")
-        logger.debug(f"parser: {parser_class}")
-
-        parser: ParserInterface = parser_class()
-        parsed: BasePageModel = parser.parse(contents, url)
-
-        asyncio.run(database.add(url, parsed.model_dump()))
+        parsed = parse_item(item)
+        asyncio.run(database.add(item.url, parsed.model_dump()))
 
 
 class ParserWorker:
