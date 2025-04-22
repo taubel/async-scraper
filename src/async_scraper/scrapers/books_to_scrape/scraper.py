@@ -10,7 +10,7 @@ import aiohttp
 
 from .parsers import BookParser, HomeParser, CategoryParser
 from ...common.models import ParserItemModel
-from ...interfaces import ScraperInterface
+from ...interfaces import ScraperInterface, ParserInterface
 
 logger = logging.getLogger(__name__)
 
@@ -90,18 +90,18 @@ class BooksToScrapeScraper(ScraperInterface):
     def __init__(self, parser_queue):
         self.parser_queue = parser_queue
 
+        # TODO create model for page configurations
         self.pages = {
-            # TODO typehint scraping callback
-            HomePage: {"scraper": self.scrape_home},
-            CategoryPage: {"scraper": self.scrape_category},
-            BookPage: {"scraper": self.scrape_book},
+            HomePage: {"parser": HomeParser},
+            CategoryPage: {"parser": CategoryParser},
+            BookPage: {"parser": BookParser},
         }
 
     def _create_scraping_task(self, link: str, callback: Callable) -> asyncio.Task:
         for page, value in self.pages.items():
             if page.match(link):
-                scraper = value["scraper"]
-                task = asyncio.create_task(scraper(link, callback))
+                parser = value["parser"]
+                task = asyncio.create_task(self.scrape_page(link, callback, parser))
                 return task
         else:
             raise ValueError(f"No scraper found for link {link}")
@@ -112,7 +112,8 @@ class BooksToScrapeScraper(ScraperInterface):
         parsed_url = urlparse(url)
         for page, value in self.pages.items():
             if page.match(parsed_url.path):
-                await value["scraper"](url, callback)
+                parser = value["parser"]
+                await self.scrape_page(url, callback, parser)
                 break
         else:
             raise ValueError(f"Url: {url} does not match any defined page")
@@ -120,6 +121,7 @@ class BooksToScrapeScraper(ScraperInterface):
         logger.debug(f"Finished scraping {url}")
 
     async def scrape_url(self, url: str) -> str | None:
+        logger.debug(f"Scraping url {url}")
         try:
             contents = await get_page_contents(url)
             return contents
@@ -128,23 +130,8 @@ class BooksToScrapeScraper(ScraperInterface):
             logger.error(e)
             return None
 
-    async def scrape_home(self, url: str, scrape_callback: ScrapeCallback):
-        logger.debug(f"Scraping home page: {url}")
+    async def scrape_page(self, url: str, scrape_callback: ScrapeCallback, parser: type[ParserInterface]):
         contents = await self.scrape_url(url)
         if contents:
-            item = ParserItemModel(parser=HomeParser, contents=contents, url=url)
-            await scrape_callback(item)
-
-    async def scrape_category(self, url: str, scrape_callback: ScrapeCallback):
-        logger.debug(f"Scraping category: {url}")
-        contents = await self.scrape_url(url)
-        if contents:
-            item = ParserItemModel(parser=CategoryParser, contents=contents, url=url)
-            await scrape_callback(item)
-
-    async def scrape_book(self, url: str, scrape_callback: ScrapeCallback):
-        logger.debug(f"Scraping book: {url}")
-        contents = await self.scrape_url(url)
-        if contents:
-            item = ParserItemModel(parser=BookParser, contents=contents, url=url)
+            item = ParserItemModel(parser=parser, contents=contents, url=url)
             await scrape_callback(item)
