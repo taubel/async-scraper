@@ -4,7 +4,7 @@ import multiprocessing
 
 import click
 
-from async_scraper.parser_database import JSONDatabase
+from async_scraper.databases import JSONDatabase
 from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
 

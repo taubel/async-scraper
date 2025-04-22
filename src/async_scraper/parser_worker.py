@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Iterator
 
 from .common.models import ParserItemModel
-from .parser_database import JSONDatabase
+from .databases import JSONDatabase
 from .scrapers.books_to_scrape.parsers import BasePageModel
 
 logger = logging.getLogger(__name__)
