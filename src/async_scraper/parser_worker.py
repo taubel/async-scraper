@@ -2,6 +2,7 @@ import asyncio
 import logging
 import queue
 from concurrent.futures import ThreadPoolExecutor
+from typing import Iterator
 
 from .common.models import ParserItemModel
 from .parser_database import JSONDatabase
@@ -24,15 +25,19 @@ def parse_item(item: ParserItemModel) -> BasePageModel:
     return parsed
 
 
-def parse(parser_queue, database: JSONDatabase):
+def parse_queue(parser_queue) -> Iterator[BasePageModel]:
     while True:
         try:
             item: ParserItemModel = parser_queue.get_nowait()
         except queue.Empty:
             logger.debug("ParserWorker shutting down")
             break
-        parsed = parse_item(item)
-        asyncio.run(database.add(item.url, parsed.model_dump()))
+        yield parse_item(item)
+
+
+def run_parse_process(parser_queue, database: JSONDatabase):
+    for item in parse_queue(parser_queue):
+        asyncio.run(database.add(item.url, item.model_dump()))
 
 
 class ParserWorker:
@@ -49,7 +54,7 @@ class ParserWorker:
         #  and implement IPC using atomic databases
         with ThreadPoolExecutor() as executor:
             futures = [
-                executor.submit(parse, self.parser_queue, self.database)
+                executor.submit(run_parse_process, self.parser_queue, self.database)
                 for _ in range(self.worker_count)
             ]
             for future in futures:

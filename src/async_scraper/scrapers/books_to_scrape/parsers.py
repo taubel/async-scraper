@@ -6,19 +6,19 @@ from pydantic import BaseModel
 
 
 class BasePageModel(BaseModel):
-    pass
+    url: str
 
 
-class BookPageModel(BaseModel):
+class BookPageModel(BasePageModel):
     name: str
     price: str
 
 
-class HomePageModel(BaseModel):
+class HomePageModel(BasePageModel):
     links: list[str]
 
 
-class CategoryPageModel(BaseModel):
+class CategoryPageModel(BasePageModel):
     links: list[str]
 
 
@@ -34,7 +34,7 @@ class BookParser(ParserInterface):
         price_tag = product_main.find("p", class_="price_color")
         assert price_tag, f"{name} does not contain a price (can't be)"
         price_str = str(price_tag.contents[0])
-        return BookPageModel(name=name, price=price_str)
+        return BookPageModel(name=name, price=price_str, url=url)
 
 
 # TODO define models
@@ -53,7 +53,7 @@ class HomeParser(ParserInterface):
 
         # Leave only unique links
         links = list(set(links))
-        return HomePageModel(links=links)
+        return HomePageModel(links=links, url=url)
 
 
 class CategoryParser(ParserInterface):
@@ -71,4 +71,4 @@ class CategoryParser(ParserInterface):
 
         # Leave only unique links
         links = list(set(links))
-        return CategoryPageModel(links=links)
+        return CategoryPageModel(links=links, url=url)
