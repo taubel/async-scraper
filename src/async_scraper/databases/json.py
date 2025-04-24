@@ -64,18 +64,3 @@ class AsyncJSONDatabase(AsyncDatabaseInterface):
             logger.error("Failed to read database")
             return None
         return data[url]
-
-    # TODO create separate implementations for a sync and async JSONDatabase
-    def __iter__(self) -> Iterator[tuple[str, Any]]:
-        with self.lock:
-            try:
-                with open(self.path_to_file, "r") as f:
-                    data = json.load(f)
-            except FileNotFoundError:
-                data = {}
-            except json.JSONDecodeError:
-                logger.error("Failed to decode json in database file")
-                return
-
-        for key, value in data.items():
-            yield key, value

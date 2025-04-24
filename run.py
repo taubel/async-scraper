@@ -24,11 +24,10 @@ def run_scraper(url):
     asyncio.run(scraper.scrape(url))
     parser_worker.run()
 
+    data = asyncio.run(database.get(url))
     click.echo("Parsed data:")
-    for url, data in database:
-        click.echo("-" * 30)
-        click.echo(url)
-        click.echo(data)
+    click.echo(url)
+    click.echo(data)
 
 
 if __name__ == "__main__":
