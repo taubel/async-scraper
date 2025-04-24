@@ -1,1 +1,1 @@
-from .json import JSONDatabase
+from .json import AsyncJSONDatabase

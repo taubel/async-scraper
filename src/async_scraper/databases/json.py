@@ -5,6 +5,8 @@ from typing import Any, Iterator
 
 from anyio import open_file
 
+from ..interfaces.database import AsyncDatabaseInterface
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 # It doesn’t have the same problem as JSON when you run twice.
 # Also, as each record is a separate line, you can process big files without having to fit everything in memory,
 # there are tools like JQ to help do that at the command-line.
-class JSONDatabase:
+class AsyncJSONDatabase(AsyncDatabaseInterface):
     def __init__(self, path_to_file: str, lock):
         path = pathlib.Path(path_to_file)
         if not path.parent.exists():
@@ -53,15 +55,15 @@ class JSONDatabase:
         with self.lock:
             await self._add(key, value)
 
-    async def add(self, key: str, value: Any):
-        await self._add(key, value)
+    async def add(self, url: str, value: Any):
+        await self._add(url, value)
 
-    async def get(self, key: str) -> str | None:
+    async def get(self, url: str) -> Any:
         data = await self._read_safe()
         if data is None:
             logger.error("Failed to read database")
             return None
-        return data[key]
+        return data[url]
 
     # TODO create separate implementations for a sync and async JSONDatabase
     def __iter__(self) -> Iterator[tuple[str, Any]]:

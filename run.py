@@ -4,7 +4,7 @@ import multiprocessing
 
 import click
 
-from async_scraper.databases import JSONDatabase
+from async_scraper.databases import AsyncJSONDatabase
 from async_scraper.parser_worker import ParserWorker
 from async_scraper.scrapers import create_scraper
 
@@ -18,7 +18,7 @@ def run_scraper(url):
     queue = multiprocessing.Queue()
     scraper = create_scraper(url, queue)
     lock = multiprocessing.Lock()
-    database = JSONDatabase("/tmp/data.json", lock)
+    database = AsyncJSONDatabase("/tmp/data.json", lock)
     parser_worker = ParserWorker(queue, database)
 
     asyncio.run(scraper.scrape(url))

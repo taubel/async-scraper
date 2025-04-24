@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Iterator
 
 from .common.models import ParserItemModel
-from .databases import JSONDatabase
+from .interfaces.database import AsyncDatabaseInterface
 from .scrapers.books_to_scrape.parsers import BasePageModel
 
 logger = logging.getLogger(__name__)
@@ -35,13 +35,13 @@ def parse_queue(parser_queue) -> Iterator[BasePageModel]:
         yield parse_item(item)
 
 
-def run_parse_process(parser_queue, database: JSONDatabase):
+def run_parse_process(parser_queue, database: AsyncDatabaseInterface):
     for item in parse_queue(parser_queue):
         asyncio.run(database.add(item.url, item.model_dump()))
 
 
 class ParserWorker:
-    def __init__(self, parser_queue, database: JSONDatabase, worker_count: int = 3):
+    def __init__(self, parser_queue, database: AsyncDatabaseInterface, worker_count: int = 3):
         self.parser_queue = parser_queue
         self.database = database
         self.worker_count = worker_count
